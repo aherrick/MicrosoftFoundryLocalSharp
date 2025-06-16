@@ -4,7 +4,7 @@ This project is a minimal streaming chat console app using `Microsoft.Extensions
 
 ## ✅ Prerequisites
 
-1. Install the latest [.NET 9 SDK (Preview)](https://dotnet.microsoft.com/en-us/download/dotnet/9.0).
+1. Install the latest [.NET 9 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/9.0).
 
 2. Install and configure [Microsoft Foundry Local](https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-local/get-started).
 
@@ -32,4 +32,4 @@ A: The capital of France is Paris.
 ## 🔗 Resources
 
 - [Foundry Local Documentation](https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-local/get-started)
-- [.NET 9 SDK Preview Downloads](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
+- [.NET 9 SDK Downloads](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
