@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Net;
 using System.Text;
 using Microsoft.Extensions.AI;
 using OpenAI.Chat;
@@ -8,23 +9,18 @@ Console.OutputEncoding = Encoding.UTF8;
 var foundryUrl = "http://localhost:5273/v1";
 var modelName = "mistralai-Mistral-7B-Instruct-v0-2-generic-cpu";
 
-IChatClient chatClient = CreateChatClient(modelName, foundryUrl);
+IChatClient chatClient = new ChatClient(
+    model: modelName,
+    credential: new("local"),
+    new OpenAI.OpenAIClientOptions { Endpoint = new(foundryUrl) }
+).AsIChatClient();
 
 if (!await CanChatWithModel(chatClient))
 {
     await StartAndWaitForModel(modelName, chatClient);
 }
 
-await RunChatLoopAsync(chatClient);
-
-static IChatClient CreateChatClient(string modelName, string endpoint)
-{
-    return new ChatClient(
-        model: modelName,
-        credential: new("local"),
-        new OpenAI.OpenAIClientOptions { Endpoint = new(endpoint) }
-    ).AsIChatClient();
-}
+await RunChatLoop(chatClient);
 
 static async Task<bool> CanChatWithModel(IChatClient chatClient)
 {
@@ -75,7 +71,7 @@ static async Task StartAndWaitForModel(string modelName, IChatClient chatClient)
     }
 }
 
-static async Task RunChatLoopAsync(IChatClient chatClient)
+static async Task RunChatLoop(IChatClient chatClient)
 {
     var messages = new List<Microsoft.Extensions.AI.ChatMessage>();
 
