@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Net;
 using System.Text;
 using Microsoft.Extensions.AI;
 using OpenAI.Chat;
