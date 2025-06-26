@@ -1,103 +1,43 @@
-﻿using System.Diagnostics;
-using System.Text;
-using Microsoft.Extensions.AI;
+﻿using System.ClientModel;
+using Microsoft.AI.Foundry.Local;
+using OpenAI;
 using OpenAI.Chat;
 
-Console.OutputEncoding = Encoding.UTF8;
+Console.OutputEncoding = System.Text.Encoding.UTF8;
 
-var foundryUrl = "http://localhost:5273/v1";
-var modelName = "mistralai-Mistral-7B-Instruct-v0-2-generic-cpu";
+// Alias or model ID to run locally (e.g., mistral, phi-3, etc.)
+var alias = "mistralai-Mistral-7B-Instruct-v0-2-generic-cpu";
 
-IChatClient chatClient = new ChatClient(
-    model: modelName,
-    credential: new("local"),
-    new OpenAI.OpenAIClientOptions { Endpoint = new(foundryUrl) }
-).AsIChatClient();
+// Start the model and get manager
+var manager = await FoundryLocalManager.StartModelAsync(alias);
+var model = await manager.GetModelInfoAsync(alias);
+var credential = new ApiKeyCredential(manager.ApiKey);
 
-if (!await CanChatWithModel(chatClient))
+// Setup OpenAI client pointing to local Foundry endpoint
+var client = new OpenAIClient(credential, new OpenAIClientOptions { Endpoint = manager.Endpoint });
+
+var chatClient = client.GetChatClient(model.ModelId);
+
+// Interactive chat loop
+var messages = new List<ChatMessage>();
+
+while (true)
 {
-    await StartAndWaitForModel(modelName, chatClient);
-}
+    Console.Write("Q: ");
+    var input = Console.ReadLine();
+    if (string.IsNullOrWhiteSpace(input))
+        break;
 
-await RunChatLoop(chatClient);
+    messages.Add(new UserChatMessage(input));
 
-static async Task<bool> CanChatWithModel(IChatClient chatClient)
-{
-    try
+    Console.Write("A: ");
+    foreach (var update in chatClient.CompleteChatStreaming(messages))
     {
-        await foreach (
-            var update in chatClient.GetStreamingResponseAsync([new(ChatRole.User, "ping")])
-        )
+        if (update.ContentUpdate.Count > 0)
         {
-            return true;
+            Console.Write(update.ContentUpdate[0].Text);
         }
     }
-    catch (Exception ex)
-    {
-        Console.WriteLine("Dry-run error: " + ex.Message);
-    }
 
-    return false;
-}
-static async Task StartAndWaitForModel(string modelName, IChatClient chatClient)
-{
-    Console.WriteLine("🚀 Starting Foundry model...");
-
-    var psi = new ProcessStartInfo
-    {
-        FileName = "foundry",
-        Arguments = $"model run \"{modelName}\"",
-        UseShellExecute = false,
-        CreateNoWindow = true,
-        RedirectStandardOutput = true,
-        RedirectStandardError = true,
-    };
-
-    Process.Start(psi);
-
-    Console.Write("⏳ Waiting for model to respond");
-
-    while (true)
-    {
-        if (await CanChatWithModel(chatClient))
-        {
-            Console.WriteLine("\n✅ Model is ready.");
-            return;
-        }
-
-        Console.Write(".");
-        await Task.Delay(1000);
-    }
-}
-
-static async Task RunChatLoop(IChatClient chatClient)
-{
-    var messages = new List<Microsoft.Extensions.AI.ChatMessage>();
-
-    while (true)
-    {
-        Console.Write("Q: ");
-        var input = Console.ReadLine();
-        if (string.IsNullOrWhiteSpace(input))
-            break;
-
-        messages.Add(new(ChatRole.User, input));
-
-        var responseText = new TextContent(string.Empty);
-        var responseMessage = new Microsoft.Extensions.AI.ChatMessage(
-            ChatRole.Assistant,
-            [responseText]
-        );
-
-        Console.Write("A: ");
-        await foreach (var update in chatClient.GetStreamingResponseAsync(messages))
-        {
-            Console.Write(update.Text);
-            responseText.Text += update.Text;
-        }
-
-        Console.WriteLine();
-        messages.Add(responseMessage);
-        Console.WriteLine();
-    }
+    Console.WriteLine("\n");
 }
