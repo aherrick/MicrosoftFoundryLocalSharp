@@ -1,4 +1,5 @@
 ﻿using System.ClientModel;
+using System.Text;
 using Microsoft.AI.Foundry.Local;
 using OpenAI;
 using OpenAI.Chat;
@@ -31,13 +32,20 @@ while (true)
     messages.Add(new UserChatMessage(input));
 
     Console.Write("A: ");
-    foreach (var update in chatClient.CompleteChatStreaming(messages))
+
+    var assistantMessageStringBuilder = new StringBuilder();
+    var response = chatClient.CompleteChatStreamingAsync(messages);
+
+    await foreach (var chatUpdate in response)
     {
-        if (update.ContentUpdate.Count > 0)
+        foreach (var chatMessageContentPart in chatUpdate.ContentUpdate)
         {
-            Console.Write(update.ContentUpdate[0].Text);
+            assistantMessageStringBuilder.Append(chatMessageContentPart.Text);
+            Console.Write(chatMessageContentPart.Text);
         }
     }
+
+    messages.Add(new AssistantChatMessage(assistantMessageStringBuilder.ToString()));
 
     Console.WriteLine("\n");
 }
