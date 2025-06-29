@@ -31,12 +31,11 @@ while (true)
 
     messages.Add(new UserChatMessage(input));
 
-    Console.Write("A: ");
+    Console.Write("A:");
 
     var assistantMessageStringBuilder = new StringBuilder();
-    var response = chatClient.CompleteChatStreamingAsync(messages);
 
-    await foreach (var chatUpdate in response)
+    await foreach (var chatUpdate in chatClient.CompleteChatStreamingAsync(messages))
     {
         foreach (var chatMessageContentPart in chatUpdate.ContentUpdate)
         {
